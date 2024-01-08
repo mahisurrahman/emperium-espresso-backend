@@ -1,9 +1,9 @@
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
 const app = express();
-const morgan = require('morgan');
-require('dotenv').config();
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const morgan = require("morgan");
+require("dotenv").config();
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 
 //Middlewares//
@@ -19,7 +19,7 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
 async function run() {
@@ -28,51 +28,66 @@ async function run() {
     await client.connect();
 
     //Collections//
-    const coffeeCollection = client.db('EmperiumEspresso').collection('coffees');
-
+    const coffeeCollection = client
+      .db("EmperiumEspresso")
+      .collection("coffees");
 
     //Get All Coffees//
-    app.get('/coffees', async(req, res)=>{
+    app.get("/coffees", async (req, res) => {
       const cursor = coffeeCollection.find();
       const result = await cursor.toArray();
       res.send(result);
-    })
+    });
 
     //Get Single Coffee//
-    app.get('/coffees/:id', async(req, res)=>{
+    app.get("/coffees/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await coffeeCollection.findOne(query);
       res.send(result);
-    })
+    });
 
     //Update a Single Coffee//
-    app.get('/coffees/:id', async(req, res)=>{
+    app.put("/coffees/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
-      const result = await coffeeCollection.findOne(query);
-      
-    })
+      const query = { _id: new ObjectId(id) };
+      const coffee = req.body;
+      const options = { upsert: true };
+      const updatedCoffee = {
+        $set: {
+          name: coffee.name,
+          taste: coffee.taste,
+          category: coffee.category,
+          chefName: coffee.chefName,
+          details: coffee.details,
+          photo: coffee.photo,
+          price: coffee.price,
+        },
+      };
+      const result = await coffeeCollection.updateOne(query, updatedCoffee, options);
+      res.send(result);
+    });
 
     //Add Coffees//
-    app.post('/coffees', async(req, res)=>{
+    app.post("/coffees", async (req, res) => {
       const coffee = req.body;
       const result = await coffeeCollection.insertOne(coffee);
       res.send(result);
-})
+    });
 
     // Delete Coffee//
-    app.delete('/coffees/:id', async(req, res)=>{
+    app.delete("/coffees/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await coffeeCollection.deleteOne(query);
       res.send(result);
-    })
-
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -80,13 +95,11 @@ async function run() {
 }
 run().catch(console.dir);
 
-
-
 //Default Get and LISTEN Method//
-app.get("/", (req, res)=>{
-    res.send('Server Running Smoothly');
-})
+app.get("/", (req, res) => {
+  res.send("Server Running Smoothly");
+});
 
-app.listen(port, ()=>{
-    console.log(`Server Running on Port ${port}`);
-})
+app.listen(port, () => {
+  console.log(`Server Running on Port ${port}`);
+});
